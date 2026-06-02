@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌌 MATH UNIVERSE - El Juego de Fracciones</title>
+    
+    <!-- Babylon.js 3D Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/babylonjs@6.0.0/babylon.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@6.0.0/babylonjs.loaders.min.js"></script>
+    
+    <!-- Cannon Physics Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/cannon@0.20.0/build/cannon.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Audiowide&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/ui.css">
+    <link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+    <!-- Canvas 3D Principal -->
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Interfaz del Juego -->
+    <div id="gameUI" class="game-ui">
+        <!-- Menú Principal -->
+        <div id="mainMenu" class="menu-container active">
+            <div class="menu-content">
+                <h1 class="title-main">🌌 MATH UNIVERSE</h1>
+                <p class="subtitle">Domina las Fracciones en el Espacio</p>
+                
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" onclick="game.startGame()">
+                        <span>▶ JUGAR</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showDifficultyMenu()">
+                        <span>⚙️ DIFICULTAD</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showInstructions()">
+                        <span>📖 INSTRUCCIONES</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showHighScores()">
+                        <span>🏆 PUNTUACIONES</span>
+                    </button>
+                </div>
+                
+                <div class="menu-info">
+                    <p>🎮 Resuelve desafíos matemáticos en 4 mundos épicos</p>
+                    <p>⭐ Recolecta estrellas y desbloquea poder especiales</p>
+                    <p>🏅 Domina todas las operaciones con fracciones</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Selección de Dificultad -->
+        <div id="difficultyMenu" class="menu-container">
+            <div class="menu-content">
+                <h2>📊 SELECCIONA DIFICULTAD</h2>
+                <div class="difficulty-options">
+                    <div class="difficulty-card" onclick="selectDifficulty('easy')">
+                        <h3>🟢 FÁCIL</h3>
+                        <p>Fracciones simples<br>Más tiempo para resolver<br>Puntuación × 1</p>
+                    </div>
+                    <div class="difficulty-card" onclick="selectDifficulty('normal')">
+                        <h3>🟡 NORMAL</h3>
+                        <p>Desafío balanceado<br>Tiempo normal<br>Puntuación × 1.5</p>
+                    </div>
+                    <div class="difficulty-card" onclick="selectDifficulty('hard')">
+                        <h3>🔴 DIFÍCIL</h3>
+                        <p>Fracciones complejas<br>Menos tiempo<br>Puntuación × 2</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="backToMenu()">← ATRÁS</button>
+            </div>
+        </div>
+        
+        <!-- Instrucciones -->
+        <div id="instructionsMenu" class="menu-container">
+            <div class="menu-content instructions-content">
+                <h2>📖 CÓMO JUGAR</h2>
+                <div class="instructions-text">
+                    <h3>🌍 Mundo 1: LA DIVISIÓN</h3>
+                    <p>Recolecta fragmentos iguales para completar círculos. Aprende sobre fracciones equivalentes.</p>
+                    
+                    <h3>✨ Mundo 2: LA SUMA MÁGICA</h3>
+                    <p>Combina fracciones con el mismo denominador. ¡Resuelve antes de que expire el tiempo!</p>
+                    
+                    <h3>🌠 Mundo 3: LA MULTIPLICACIÓN CÓSMICA</h3>
+                    <p>Salta sobre plataformas y multiplica fracciones. Evita obstáculos flotantes.</p>
+                    
+                    <h3>🏛️ Mundo 4: EL TEMPLO FINAL</h3>
+                    <p>Enfrenta el Boss Final. Todas tus habilidades serán puestas a prueba.</p>
+                    
+                    <h3>🎮 Controles</h3>
+                    <p>🖱️ <strong>Mouse:</strong> Interactúa y rota cámara<br>
+                    ⌨️ <strong>WASD:</strong> Movimiento<br>
+                    <strong>ESPACIO:</strong> Saltar<br>
+                    <strong>ESC:</strong> Pausa</p>
+                </div>
+                <button class="btn btn-primary" onclick="backToMenu()">← ATRÁS</button>
+            </div>
+        </div>
+        
+        <!-- Puntuaciones Altas -->
+        <div id="highScoresMenu" class="menu-container">
+            <div class="menu-content">
+                <h2>🏆 PUNTUACIONES MÁXIMAS</h2>
+                <div id="scoresList" class="scores-list">
+                    <p>Sin puntuaciones registradas. ¡Sé el primero!</p>
+                </div>
+                <button class="btn btn-primary" onclick="backToMenu()">← ATRÁS</button>
+            </div>
+        </div>
+        
+        <!-- HUD en Juego -->
+        <div id="gameHUD" class="hud-container">
+            <div class="hud-top">
+                <div class="hud-section">
+                    <span class="hud-label">⭐ ESTRELLAS</span>
+                    <span id="starCount" class="hud-value">0/3</span>
+                </div>
+                <div class="hud-section">
+                    <span class="hud-label">❤️ VIDAS</span>
+                    <span id="healthCount" class="hud-value">3</span>
+                </div>
+                <div class="hud-section">
+                    <span class="hud-label">⏱️ TIEMPO</span>
+                    <span id="timeCount" class="hud-value">60s</span>
+                </div>
+                <div class="hud-section">
+                    <span class="hud-label">🎯 MUNDO</span>
+                    <span id="worldName" class="hud-value">--</span>
+                </div>
+            </div>
+            
+            <div class="hud-bottom">
+                <div id="problemDisplay" class="problem-display">
+                    <div class="problem-text">Resuelve el problema...</div>
+                </div>
+            </div>
+            
+            <button id="pauseBtn" class="btn-pause" onclick="togglePause()">⏸️ PAUSA</button>
+        </div>
+        
+        <!-- Pausa -->
+        <div id="pauseMenu" class="menu-container">
+            <div class="menu-content">
+                <h2>⏸️ JUEGO EN PAUSA</h2>
+                <div class="pause-buttons">
+                    <button class="btn btn-primary" onclick="togglePause()">▶ CONTINUAR</button>
+                    <button class="btn btn-secondary" onclick="goToMainMenu()">🏠 MENÚ PRINCIPAL</button>
+                    <button class="btn btn-secondary" onclick="location.reload()">🔄 REINICIAR</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pantalla de Victoria -->
+        <div id="victoryScreen" class="menu-container">
+            <div class="menu-content victory-content">
+                <h2>🎉 ¡VICTORIA!</h2>
+                <div class="victory-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Puntuación:</span>
+                        <span id="finalScore" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Estrellas:</span>
+                        <span id="finalStars" class="stat-value">0/3</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Precisión:</span>
+                        <span id="finalAccuracy" class="stat-value">0%</span>
+                    </div>
+                </div>
+                <div class="victory-buttons">
+                    <button class="btn btn-primary" onclick="game.nextWorld()">➡️ SIGUIENTE MUNDO</button>
+                    <button class="btn btn-secondary" onclick="game.retryWorld()">🔄 REINTENTAR</button>
+                    <button class="btn btn-secondary" onclick="goToMainMenu()">🏠 MENÚ</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pantalla de Game Over -->
+        <div id="gameOverScreen" class="menu-container">
+            <div class="menu-content game-over-content">
+                <h2>💀 GAME OVER</h2>
+                <p id="gameOverMessage">¡Perdiste! Pero lo hiciste muy bien.</p>
+                <div class="game-over-buttons">
+                    <button class="btn btn-primary" onclick="game.retryWorld()">🔄 REINTENTAR</button>
+                    <button class="btn btn-secondary" onclick="goToMainMenu()">🏠 MENÚ PRINCIPAL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts del Juego -->
+    <script src="js/utils/math-utils.js"></script>
+    <script src="js/utils/storage.js"></script>
+    <script src="js/utils/audio-manager.js"></script>
+    <script src="js/utils/particle-system.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/worlds/division.js"></script>
+    <script src="js/worlds/suma.js"></script>
+    <script src="js/worlds/multiplicacion.js"></script>
+    <script src="js/worlds/templo.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
