@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌌 MATH UNIVERSE - El Juego de Fracciones</title>
+    
+    <!-- Babylon.js 3D Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/babylonjs@6.0.0/babylon.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/babylonjs-loaders@6.0.0/babylonjs.loaders.min.js"></script>
+    
+    <!-- Cannon Physics Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/cannon@0.20.0/build/cannon.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Audiowide&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #00d4ff;
+            --secondary-color: #ff006e;
+            --accent-color: #ffbe0b;
+            --dark-bg: #0a0e27;
+            --darker-bg: #050813;
+            --light-text: #ffffff;
+            --muted-text: #b0b0b0;
+            --success: #00ff88;
+            --danger: #ff4444;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            font-family: 'Audiowide', 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            color: var(--light-text);
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .menu-container {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 8, 19, 0.95);
+            pointer-events: all;
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .menu-container.active {
+            display: flex;
+        }
+
+        .menu-content {
+            text-align: center;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px;
+            background: rgba(10, 14, 39, 0.8);
+            border: 3px solid var(--primary-color);
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .title-main {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-family: 'Audiowide', sans-serif;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #00a8cc 100%);
+            color: var(--dark-bg);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.8);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #cc0055 100%);
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+        }
+
+        .btn-secondary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 0, 110, 0.8);
+        }
+
+        .difficulty-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .difficulty-card {
+            padding: 25px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid var(--primary-color);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .difficulty-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .difficulty-card p {
+            font-size: 0.9rem;
+            color: var(--muted-text);
+            line-height: 1.6;
+        }
+
+        .hud-container {
+            display: none;
+        }
+
+        .hud-container.active {
+            display: block;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: linear-gradient(180deg, rgba(10, 14, 39, 0.9) 0%, transparent 100%);
+            position: absolute;
+            top: 0;
+            width: 100%;
+        }
+
+        .hud-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 212, 255, 0.1);
+            padding: 10px 20px;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+
+        .hud-label {
+            font-size: 0.85rem;
+            color: var(--muted-text);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .hud-value {
+            font-size: 1.3rem;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .hud-bottom {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+        }
+
+        .problem-display {
+            background: rgba(10, 14, 39, 0.95);
+            border: 3px solid var(--secondary-color);
+            border-radius: 15px;
+            padding: 25px 40px;
+            box-shadow: 0 0 30px rgba(255, 0, 110, 0.5);
+            max-width: 500px;
+            min-width: 300px;
+            pointer-events: all;
+        }
+
+        .problem-text {
+            font-size: 1.5rem;
+            color: var(--light-text);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .problem-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .option-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #00a8cc 100%);
+            color: var(--dark-bg);
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            pointer-events: all;
+        }
+
+        .option-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+        }
+
+        .btn-pause {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #ffaa00 0%, #ff8800 100%);
+            color: var(--dark-bg);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: 'Audiowide', sans-serif;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+            pointer-events: all;
+            transition: all 0.3s ease;
+        }
+
+        .btn-pause:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 170, 0, 0.8);
+        }
+
+        .menu-info {
+            color: var(--muted-text);
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        .menu-info p {
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .title-main {
+                font-size: 2.5rem;
+            }
+
+            .menu-content {
+                padding: 25px;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 0.95rem;
+            }
+
+            .hud-top {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .problem-display {
+                min-width: 250px;
+                padding: 15px 25px;
+            }
+
+            .problem-text {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas 3D Principal -->
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Interfaz del Juego -->
+    <div id="gameUI" class="game-ui">
+        <!-- Menú Principal -->
+        <div id="mainMenu" class="menu-container active">
+            <div class="menu-content">
+                <h1 class="title-main">🌌 MATH UNIVERSE</h1>
+                <p class="subtitle">Domina las Fracciones en el Espacio</p>
+                
+                <div class="menu-buttons">
+                    <button class="btn btn-primary" onclick="game.startGame()">
+                        <span>▶ JUGAR</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showDifficultyMenu()">
+                        <span>⚙️ DIFICULTAD</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showInstructions()">
+                        <span>📖 INSTRUCCIONES</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showHighScores()">
+                        <span>🏆 PUNTUACIONES</span>
+                    </button>
+                </div>
+                
+                <div class="menu-info">
+                    <p>🎮 Resuelve desafíos matemáticos en 4 mundos épicos</p>
+                    <p>⭐ Recolecta estrellas y desbloquea poderes especiales</p>
+                    <p>🏅 Domina todas las operaciones con fracciones</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Selección de Dificultad -->
+        <div id="difficultyMenu" class="menu-container">
+            <div class="menu-content">
+                <h2>📊 SELECCIONA DIFICULTAD</h2>
+                <div class="difficulty-options">
+                    <div class="difficulty-card" onclick="selectDifficulty('easy')">
+                        <h3>🟢 FÁCIL</h3>
+                        <p>Fracciones simples<br>Más tiempo para resolver<br>Puntuación × 1</p>
+                    </div>
+                    <div class="difficulty-card" onclick="selectDifficulty('normal')">
+                        <h3>🟡 NORMAL</h3>
+                        <p>Desafío balanceado<br>Tiempo normal<br>Puntuación × 1.5</p>
+                    </div>
+                    <div class="difficulty-card" onclick="selectDifficulty('hard')">
+                        <h3>🔴 DIFÍCIL</h3>
+                        <p>Fracciones complejas<br>Menos tiempo<br>Puntuación × 2</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="backToMenu()">← ATRÁS</button>
+            </div>
+        </div>
+
+        <!-- Instrucciones -->
+        <div id="instructionsMenu" class="menu-container">
+            <div class="menu-content">
+                <h2>📖 CÓMO JUGAR</h2>
+                <div style="text-align: left; color: var(--muted-text); max-height: 60vh; overflow-y: auto;">
+                    <h3 style="color: var(--accent-color); margin-top: 15px;">🌍 Mundo 1: LA DIVISIÓN</h3>
+                    <p>Recolecta fragmentos iguales para completar círculos. Aprende sobre fracciones equivalentes.</p>
+                    
+                    <h3 style="color: var(--accent-color); margin-top: 15px;">✨ Mundo 2: LA SUMA MÁGICA</h3>
+                    <p>Combina fracciones con el mismo denominador. ¡Resuelve antes de que expire el tiempo!</p>
+                    
+                    <h3 style="color: var(--accent-color); margin-top: 15px;">🌠 Mundo 3: LA MULTIPLICACIÓN CÓSMICA</h3>
+                    <p>Navega en 3D y multiplica fracciones. Evita enemigos flotantes.</p>
+                    
+                    <h3 style="color: var(--accent-color); margin-top: 15px;">🏛️ Mundo 4: EL TEMPLO FINAL</h3>
+                    <p>Enfrenta el Boss Final. Todas tus habilidades serán puestas a prueba.</p>
+                </div>
+                <button class="btn btn-primary" onclick="backToMenu()" style="margin-top: 20px;">← ATRÁS</button>
+            </div>
+        </div>
+
+        <!-- HUD en Juego -->
+        <div id="gameHUD" class="hud-container">
+            <div class="hud-top">
+                <div class="hud-section">
+                    <span class="hud-label">⭐ ESTRELLAS</span>
+                    <span id="starCount" class="hud-value">0/3</span>
+                </div>
+                <div class="hud-section">
+                    <span class="hud-label">❤️ VIDAS</span>
+                    <span id="healthCount" class="hud-value">3</span>
+                </div>
+                <div class="hud-section">
+                    <span class="hud-label">⏱️ TIEMPO</span>
+                    <span id="timeCount" class="hud-value">60s</span>
+                </div>
+                <div class="hud-section">
+                    <span class="hud-label">🎯 MUNDO</span>
+                    <span id="worldName" class="hud-value">--</span>
+                </div>
+            </div>
+            
+            <div class="hud-bottom">
+                <div id="problemDisplay" class="problem-display">
+                    <div class="problem-text">Resuelve el problema...</div>
+                </div>
+            </div>
+            
+            <button id="pauseBtn" class="btn-pause" onclick="togglePause()">⏸️ PAUSA</button>
+        </div>
+
+        <!-- Victoria -->
+        <div id="victoryScreen" class="menu-container">
+            <div class="menu-content">
+                <h2 style="color: var(--success);">🎉 ¡VICTORIA!</h2>
+                <p style="margin: 20px 0; font-size: 1.2rem; color: var(--primary-color);">¡Completaste el mundo!</p>
+                <button class="btn btn-primary" onclick="goToMainMenu()" style="margin-top: 20px;">🏠 MENÚ PRINCIPAL</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts del Juego -->
+    <script>
+        // Clase Fracción
+        class Fraction {
+            constructor(numerator, denominator) {
+                if (denominator === 0) throw new Error("Denominador no puede ser cero");
+                const gcd = this.gcd(Math.abs(numerator), Math.abs(denominator));
+                this.numerator = (numerator / gcd) * Math.sign(denominator);
+                this.denominator = Math.abs(denominator / gcd);
+            }
+            
+            gcd(a, b) {
+                return b === 0 ? a : this.gcd(b, a % b);
+            }
+            
+            add(other) {
+                const num = this.numerator * other.denominator + other.numerator * this.denominator;
+                const den = this.denominator * other.denominator;
+                return new Fraction(num, den);
+            }
+            
+            subtract(other) {
+                return this.add(new Fraction(-other.numerator, other.denominator));
+            }
+            
+            multiply(other) {
+                return new Fraction(this.numerator * other.numerator, this.denominator * other.denominator);
+            }
+            
+            divide(other) {
+                if (other.numerator === 0) throw new Error("No se puede dividir por cero");
+                return this.multiply(new Fraction(other.denominator, other.numerator));
+            }
+            
+            equals(other) {
+                return this.numerator === other.numerator && this.denominator === other.denominator;
+            }
+            
+            toString() {
+                return this.denominator === 1 ? String(this.numerator) : `${this.numerator}/${this.denominator}`;
+            }
+        }
+
+        // Generador de Problemas
+        class ProblemGenerator {
+            static generateProblem(difficulty) {
+                const max = difficulty === 'easy' ? 5 : difficulty === 'normal' ? 10 : 20;
+                const operations = ['+', '-', '*', '/'];
+                const operation = operations[Math.floor(Math.random() * operations.length)];
+                
+                const num1 = Math.floor(Math.random() * max) + 1;
+                const den1 = Math.floor(Math.random() * max) + 1;
+                const num2 = Math.floor(Math.random() * max) + 1;
+                const den2 = Math.floor(Math.random() * max) + 1;
+                
+                const f1 = new Fraction(num1, den1);
+                const f2 = new Fraction(num2, den2);
+                
+                return { f1, f2, operation };
+            }
+            
+            static solve(f1, f2, operation) {
+                switch(operation) {
+                    case '+': return f1.add(f2);
+                    case '-': return f1.subtract(f2);
+                    case '*': return f1.multiply(f2);
+                    case '/': return f1.divide(f2);
+                }
+            }
+            
+            static generateOptions(correct, count = 4) {
+                const options = [correct];
+                while (options.length < count) {
+                    const num = Math.floor(Math.random() * 20) + 1;
+                    const den = Math.floor(Math.random() * 20) + 1;
+                    const frac = new Fraction(num, den);
+                    if (!options.some(f => f.equals(frac))) options.push(frac);
+                }
+                return options.sort(() => Math.random() - 0.5);
+            }
+        }
+
+        // Controlador del Juego
+        class GameController {
+            constructor() {
+                this.engine = null;
+                this.scene = null;
+                this.camera = null;
+                this.difficulty = 'normal';
+                this.gameState = 'menu';
+                this.score = 0;
+                this.stars = 0;
+                this.health = 3;
+                this.timeRemaining = 60;
+                this.currentProblem = null;
+                
+                this.init();
+            }
+            
+            init() {
+                const canvas = document.getElementById('gameCanvas');
+                this.engine = new BABYLON.Engine(canvas, true);
+                this.scene = new BABYLON.Scene(this.engine);
+                
+                this.scene.clearColor = new BABYLON.Color3(0.05, 0.08, 0.15);
+                this.scene.collisionsEnabled = true;
+                
+                // Cámara
+                this.camera = new BABYLON.UniversalCamera('camera', new BABYLON.Vector3(0, 10, 20));
+                this.camera.attachControl(canvas, true);
+                
+                // Iluminación
+                const ambientLight = new BABYLON.HemisphericLight('ambient', new BABYLON.Vector3(0, 1, 0), this.scene);
+                ambientLight.intensity = 0.6;
+                
+                const mainLight = new BABYLON.PointLight('main', new BABYLON.Vector3(10, 20, 10), this.scene);
+                mainLight.intensity = 0.8;
+                
+                // Render loop
+                this.engine.runRenderLoop(() => {
+                    this.update();
+                    this.scene.render();
+                });
+                
+                window.addEventListener('resize', () => this.engine.resize());
+                
+                console.log('✅ Game initialized');
+            }
+            
+            startGame() {
+                this.gameState = 'playing';
+                document.getElementById('mainMenu').classList.remove('active');
+                document.getElementById('gameHUD').classList.add('active');
+                this.generateNewProblem();
+            }
+            
+            generateNewProblem() {
+                const problem = ProblemGenerator.generateProblem(this.difficulty);
+                this.currentProblem = problem;
+                
+                const answer = ProblemGenerator.solve(problem.f1, problem.f2, problem.operation);
+                const options = ProblemGenerator.generateOptions(answer);
+                
+                const display = document.getElementById('problemDisplay');
+                display.innerHTML = `
+                    <div class="problem-text">${problem.f1.toString()} ${problem.operation} ${problem.f2.toString()} = ?</div>
+                    <div class="problem-options">
+                        ${options.map((opt, i) => `<button class="option-btn" onclick="game.checkAnswer('${opt.numerator}/${opt.denominator}', '${answer.numerator}/${answer.denominator}')">${opt.toString()}</button>`).join('')}
+                    </div>
+                `;
+            }
+            
+            checkAnswer(userAnswer, correctAnswer) {
+                if (userAnswer === correctAnswer) {
+                    this.score += Math.floor(10 * (this.difficulty === 'easy' ? 1 : this.difficulty === 'normal' ? 1.5 : 2));
+                    this.stars = Math.min(3, this.stars + 1);
+                    this.generateNewProblem();
+                } else {
+                    this.health--;
+                    if (this.health <= 0) this.gameOver();
+                }
+                this.updateHUD();
+            }
+            
+            gameOver() {
+                this.gameState = 'gameOver';
+                this.showVictory();
+            }
+            
+            showVictory() {
+                document.getElementById('gameHUD').classList.remove('active');
+                document.getElementById('victoryScreen').classList.add('active');
+            }
+            
+            updateHUD() {
+                document.getElementById('starCount').textContent = `${this.stars}/3`;
+                document.getElementById('healthCount').textContent = this.health;
+                document.getElementById('timeCount').textContent = `${this.timeRemaining}s`;
+            }
+            
+            update() {
+                // Update game logic
+            }
+        }
+
+        // Variables globales
+        let game = null;
+
+        // Funciones de menú
+        function showDifficultyMenu() {
+            document.getElementById('mainMenu').classList.remove('active');
+            document.getElementById('difficultyMenu').classList.add('active');
+        }
+
+        function selectDifficulty(difficulty) {
+            game.difficulty = difficulty;
+            document.getElementById('difficultyMenu').classList.remove('active');
+            backToMenu();
+        }
+
+        function showInstructions() {
+            document.getElementById('mainMenu').classList.remove('active');
+            document.getElementById('instructionsMenu').classList.add('active');
+        }
+
+        function backToMenu() {
+            document.getElementById('difficultyMenu').classList.remove('active');
+            document.getElementById('instructionsMenu').classList.remove('active');
+            document.getElementById('mainMenu').classList.add('active');
+        }
+
+        function goToMainMenu() {
+            document.getElementById('gameHUD').classList.remove('active');
+            document.getElementById('victoryScreen').classList.remove('active');
+            document.getElementById('mainMenu').classList.add('active');
+            game = new GameController();
+        }
+
+        function togglePause() {
+            // Pause logic
+        }
+
+        function showHighScores() {
+            alert('🏆 Puntuaciones:\n\nAún no hay puntuaciones registradas.\n¡Sé el primero!');
+            backToMenu();
+        }
+
+        // Inicializar
+        window.addEventListener('DOMContentLoaded', () => {
+            game = new GameController();
+            console.log('🌌 MATH UNIVERSE - Ready to play!');
+        });
+    </script>
+</body>
+</html>
